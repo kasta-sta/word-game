@@ -54,7 +54,11 @@ io.on('connection', (socket) => {
             socket.emit('teams_distributed', { teams: teams[roomCode] });
         }
         if (rounds[roomCode] && rounds[roomCode].active) {
-            socket.emit('round_status', { word: rounds[roomCode].word, active: true });
+            socket.emit('round_status', { 
+                word: rounds[roomCode].word, 
+                active: true,
+                playerLetters: rounds[roomCode].playerLetters
+            });
         }
         console.log(`👁️ Адмін слідкує за ${roomCode}`);
     });
