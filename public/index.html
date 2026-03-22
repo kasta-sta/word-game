@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Puzzle - Етап 4 (Валідація)</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a2e; color: #fff; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 500px; }
+        
+        .screen { display: none; }
+        .screen.active { display: block; }
+        
+        input { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; background: #16213e; border: 1px solid #0f3460; color: #fff; border-radius: 4px; }
+        button { width: 100%; padding: 12px; background: #e94560; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button.secondary { background: #0f3460; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        
+        .team-section { margin: 20px 0; padding: 15px; background: #16213e; border-radius: 8px; }
+        .team-header { color: #e94560; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #0f3460; padding-bottom: 5px; }
+        
+        .lobby-section { margin: 20px 0; padding: 15px; background: #16213e; border-radius: 8px; }
+        .lobby-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+        .lobby-toggle { background: #0f3460; border: none; color: #fff; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .lobby-list { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .lobby-list.expanded { max-height: 500px; overflow-y: auto; }
+        .lobby-item { padding: 8px 12px; background: #1a1a2e; margin: 5px 0; border-radius: 4px; border-left: 3px solid #16a085; }
+        
+        /* 🆕 ЛІТЕРА */
+        .letter-display { font-size: 120px; text-align: center; margin: 30px 0; color: #e94560; text-shadow: 3px 3px 0 #0f3460; font-weight: bold; }
+        
+        /* 🆕 ВВІД КОДУ */
+        .code-input-section { margin: 20px 0; padding: 15px; background: #16213e; border-radius: 8px; border: 2px solid #16a085; }
+        .code-input { font-size: 24px; text-align: center; letter-spacing: 5px; margin: 10px 0; }
+        
+        /* 🆕 РЕЗУЛЬТАТ */
+        .result-box { padding: 20px; border-radius: 8px; margin: 15px 0; text-align: center; font-size: 1.2em; font-weight: bold; }
+        .result-success { background: #27ae60; color: #fff; }
+        .result-error { background: #c0392b; color: #fff; }
+        .result-info { background: #2980b9; color: #fff; }
+        
+        /* 🆕 ЛОГ ВІДПОВІДЕЙ (Адмін) */
+        .answer-log { max-height: 300px; overflow-y: auto; background: #000; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        .log-entry { padding: 5px; border-bottom: 1px solid #333; }
+        .log-success { color: #2ecc71; }
+        .log-error { color: #e74c3c; }
+        
+        /* 🆕 РАУНД */
+        .round-section { margin: 20px 0; padding: 15px; background: #16213e; border-radius: 8px; border: 2px solid #e94560; }
+        .round-active { background: linear-gradient(135deg, #16213e 0%, #27ae60 100%); }
+        .round-word { font-size: 2em; text-align: center; letter-spacing: 5px; margin: 10px 0; }
+        
+        .player-info { text-align: center; margin: 20px 0; }
+        .player-info .team { color: #e94560; font-size: 1.2em; }
+        .player-info .number { color: #16a085; font-size: 1.5em; font-weight: bold; }
+        
+        h2 { border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        
+        .badge { background: #e94560; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+        .status-dot { width: 8px; height: 8px; background: #2ecc71; border-radius: 50%; display: inline-block; margin-left: 8px; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ЕКРАН 1: ВХІД -->
+    <div id="screen-login" class="screen active">
+        <h2>🚪 Вхід</h2>
+        <input type="text" id="roomInput" placeholder="Код кімнати" value="TEST">
+        <input type="text" id="nameInput" placeholder="Ваше ім'я">
+        <button onclick="joinAsPlayer()">Я Гравець</button>
+        <button class="secondary" onclick="joinAsAdmin()">Я Адмін 👁️</button>
+    </div>
+
+    <!-- ЕКРАН 2: ПАНЕЛЬ АДМІНА -->
+    <div id="screen-admin" class="screen">
+        <h2>👁️ Панель Адміна</h2>
+        <div style="background:#0f3460; padding:10px; border-radius:4px; margin-bottom:10px;">
+            Кімната: <strong id="adminRoomDisplay"></strong>
+        </div>
+        
+        <!-- УЧАСНИКИ -->
+        <div class="lobby-section">
+            <div class="lobby-header" onclick="toggleLobbyList()">
+                <div>
+                    <strong>📋 Учасники</strong>
+                    <div style="font-size:12px; color:#7f8c8d;">Онлайн: <span id="playerCount">0</span></div>
+                </div>
+                <button class="lobby-toggle" id="lobbyToggleBtn">👁️ Показати</button>
+            </div>
+            <div class="lobby-list" id="lobbyList">
+                <div style="padding:20px; text-align:center; color:#7f8c8d;">Натисніть "Показати"</div>
+            </div>
+        </div>
+
+        <!-- КОМАНДИ -->
+        <div class="team-section">
+            <div class="team-header">🎲 Команди</div>
+            <input type="number" id="teamCountInput" value="2" min="2" max="10" placeholder="Кількість команд">
+            <button id="distributeBtn" onclick="distributeTeams()">🔄 Розподілити</button>
+            <div id="distMessage"></div>
+        </div>
+
+        <!-- РАУНД -->
+        <div class="round-section" id="roundSection" style="opacity:0.5; pointer-events:none;">
+            <div class="team-header">🎯 Раунд</div>
+            <input type="text" id="roundWordInput" placeholder="Слово (напр. РИС)" style="text-transform:uppercase;">
+            <button id="startRoundBtn" onclick="startRound()">🚀 Старт</button>
+            <button class="secondary" onclick="newRound()" style="margin-top:5px;">🔄 Новий раунд</button>
+            <div id="roundMessage"></div>
+        </div>
+
+        <!-- СТАТУС РАУНДУ -->
+        <div id="roundStatusContainer"></div>
+
+        <!-- 🆕 ЛОГ ВІДПОВІДЕЙ -->
+        <div class="team-section">
+            <div class="team-header">📝 Лог відповідей</div>
+            <div class="answer-log" id="answerLog">
+                <div style="color:#7f8c8d; text-align:center;">Поки що немає відповідей...</div>
+            </div>
+        </div>
+
+        <button class="secondary" onclick="location.reload()">Вийти</button>
+    </div>
+
+    <!-- ЕКРАН 3: ГРАВЕЦЬ -->
+    <div id="screen-player" class="screen">
+        <h2>👤 Вітаємо, <span id="playerNameDisplay"></span>!</h2>
+        
+        <div id="playerWaiting" class="result-box result-info">⏳ Чекаєте на розподіл...</div>
+        
+        <div id="playerAssigned" style="display:none;">
+            <div class="team-section">
+                <div class="team-header">✅ Команда</div>
+                <p>Команда: <strong id="playerTeamDisplay" class="team"></strong></p>
+                <p>Номер: <strong id="playerNumberDisplay" class="number"></strong></p>
+            </div>
+            <div id="waitingRound" class="result-box result-info">⏳ Чекаєте на раунд...</div>
+        </div>
+
+        <!-- 🆕 ЕКРАН РАУНДУ -->
+        <div id="playerRound" style="display:none;">
+            <div class="round-section round-active">
+                <div class="team-header">🎯 Раунд активний!</div>
+                <div class="letter-display" id="letterDisplay">?</div>
+                <div class="player-info">
+                    <p>Команда: <span id="playerTeamRound" class="team"></span></p>
+                    <p>Номер: <span id="playerNumberRound" class="number"></span></p>
+                </div>
+            </div>
+
+            <!-- 🆕 ВВІД КОДУ -->
+            <div class="code-input-section">
+                <div class="team-header">🔢 Введіть код команди</div>
+                <p style="font-size:12px; color:#7f8c8d; text-align:center;">
+                    Послідовність номерів гравців (напр. 321)
+                </p>
+                <input type="text" id="answerCode" class="code-input" placeholder="123" maxlength="10" inputmode="numeric">
+                <button onclick="submitAnswer()">✅ Відповісти</button>
+            </div>
+
+            <!-- 🆕 РЕЗУЛЬТАТ -->
+            <div id="answerResult" style="display:none;"></div>
+        </div>
+        
+        <button class="secondary" onclick="location.reload()">Вийти</button>
+    </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    let socket = io();
+    let currentRoom = '';
+    let playerName = '';
+    let lobbyExpanded = false;
+    let playerTeam = '';
+    let playerNumber = '';
+
+    const show = (id) => {
+        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    };
+
+    function joinAsPlayer() {
+        const room = document.getElementById('roomInput').value.trim();
+        const name = document.getElementById('nameInput').value.trim();
+        if (!room || !name) return alert('Заповніть поля');
+
+        currentRoom = room;
+        playerName = name;
+        socket.emit('player_join', { roomCode: room, name });
+        document.getElementById('playerNameDisplay').innerText = name;
+        show('screen-player');
+    }
+
+    function joinAsAdmin() {
+        const room = document.getElementById('roomInput').value.trim();
+        if (!room) return alert('Введіть код кімнати');
+        currentRoom = room;
+        document.getElementById('adminRoomDisplay').innerText = room;
+        socket.emit('admin_watch', { roomCode: room });
+        show('screen-admin');
+    }
+
+    function toggleLobbyList() {
+        lobbyExpanded = !lobbyExpanded;
+        const list = document.getElementById('lobbyList');
+        const btn = document.getElementById('lobbyToggleBtn');
+        if (lobbyExpanded) {
+            list.classList.add('expanded');
+            btn.textContent = '🙈 Сховати';
+        } else {
+            list.classList.remove('expanded');
+            btn.textContent = '👁️ Показати';
+        }
+    }
+
+    function distributeTeams() {
+        const teamCount = parseInt(document.getElementById('teamCountInput').value);
+        if (teamCount < 2 || teamCount > 10) {
+            showMessage('distMessage', '❌ 2-10 команд', 'error');
+            return;
+        }
+        socket.emit('distribute_teams', { roomCode: currentRoom, teamCount });
+        document.getElementById('distributeBtn').disabled = true;
+    }
+
+    function startRound() {
+        const word = document.getElementById('roundWordInput').value.trim();
+        if (!word) {
+            showMessage('roundMessage', '❌ Введіть слово!', 'error');
+            return;
+        }
+        socket.emit('start_round', { roomCode: currentRoom, word });
+        showMessage('roundMessage', '🚀 Літери розіслано!', 'success');
+    }
+
+    function newRound() {
+        socket.emit('new_round', { roomCode: currentRoom });
+        document.getElementById('roundStatusContainer').innerHTML = '';
+        showMessage('roundMessage', '🔄 Раунд скинуто', 'info');
+    }
+
+    // 🆕 ВІДПРАВКА ВІДПОВІДІ
+    function submitAnswer() {
+        const code = document.getElementById('answerCode').value.trim();
+        if (!code || !/^\d+$/.test(code)) {
+            showResult('❌ Введіть тільки цифри!', 'error');
+            return;
+        }
+        
+        socket.emit('submit_answer', {
+            roomCode: currentRoom,
+            team: playerTeam,
+            code: code
+        });
+        
+        document.getElementById('answerCode').value = '';
+    }
+
+    function showMessage(id, text, type) {
+        const el = document.getElementById(id);
+        el.className = `result-box result-${type}`;
+        el.textContent = text;
+    }
+
+    function showResult(text, type) {
+        const el = document.getElementById('answerResult');
+        el.style.display = 'block';
+        el.className = `result-box result-${type}`;
+        el.textContent = text;
+    }
+
+    // 🆕 ДОДАТИ ЗАПИС У ЛОГ (Адмін)
+    function addAnswerLog(data) {
+        const log = document.getElementById('answerLog');
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${data.success ? 'log-success' : 'log-error'}`;
+        entry.textContent = `[${data.timestamp}] ${data.team}: код "${data.code}" → "${data.guessedWord}" ${data.success ? '✅' : '❌'}`;
+        log.prepend(entry);
+    }
+
+    // === SOCKET LISTENERS ===
+    
+    socket.on('lobby_update', ({ players }) => {
+        document.getElementById('playerCount').textContent = players.length;
+        if (lobbyExpanded) {
+            const list = document.getElementById('lobbyList');
+            list.innerHTML = players.length === 0 
+                ? '<div style="padding:20px; text-align:center; color:#7f8c8d;">Немає учасників</div>'
+                : players.map((p, i) => `
+                    <div class="lobby-item">
+                        <strong>${i + 1}. ${p.name}</strong>
+                        <span class="status-dot"></span>
+                    </div>`).join('');
+        }
+    });
+
+    socket.on('team_assigned', ({ team, number }) => {
+        playerTeam = team;
+        playerNumber = number;
+        document.getElementById('playerWaiting').style.display = 'none';
+        document.getElementById('playerAssigned').style.display = 'block';
+        document.getElementById('playerTeamDisplay').textContent = team;
+        document.getElementById('playerNumberDisplay').textContent = `#${number}`;
+    });
+
+    socket.on('round_started', ({ letter, number, team }) => {
+        document.getElementById('waitingRound').style.display = 'none';
+        document.getElementById('playerRound').style.display = 'block';
+        document.getElementById('letterDisplay').textContent = letter;
+        document.getElementById('playerTeamRound').textContent = team;
+        document.getElementById('playerNumberRound').textContent = `#${number}`;
+        document.getElementById('answerResult').style.display = 'none';
+    });
+
+    socket.on('teams_distributed', ({ teams }) => {
+        showMessage('distMessage', '✅ Команди розподілено!', 'success');
+        document.getElementById('roundSection').style.opacity = '1';
+        document.getElementById('roundSection').style.pointerEvents = 'auto';
+    });
+
+    socket.on('round_status', ({ word, active }) => {
+        if (active) {
+            document.getElementById('roundStatusContainer').innerHTML = `
+                <div class="round-section round-active">
+                    <div class="team-header">🎯 Активний раунд</div>
+                    <div class="round-word">${word}</div>
+                </div>`;
+        }
+    });
+
+    // 🆕 РЕЗУЛЬТАТ ВІДПОВІДІ (всі бачать)
+    socket.on('answer_result', (data) => {
+        // Гравець бачить результат якщо це його команда
+        if (data.team === playerTeam) {
+            showResult(`${data.message} (${data.guessedWord})`, data.success ? 'success' : 'error');
+        }
+        
+        // Адмін бачить у лозі
+        if (document.getElementById('screen-admin').classList.contains('active')) {
+            addAnswerLog(data);
+        }
+    });
+
+    // 🆕 РАУНД ЗАВЕРШЕНО
+    socket.on('round_ended', ({ winner, word }) => {
+        if (document.getElementById('screen-admin').classList.contains('active')) {
+            showMessage('roundMessage', `🏆 ${winner} перемогли! Слово: ${word}`, 'success');
+        }
+    });
+
+    socket.on('round_reset', () => {
+        document.getElementById('answerResult').style.display = 'none';
+        document.getElementById('answerCode').value = '';
+    });
+
+    socket.on('error_msg', ({ msg }) => {
+        showMessage('roundMessage', msg, 'error');
+    });
+</script>
+</body>
+</html>
