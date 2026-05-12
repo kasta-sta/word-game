@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /game
+Disallow: /admin
+Disallow: /socket.io/
+
+Sitemap: https://word-game.website/sitemap.xml
