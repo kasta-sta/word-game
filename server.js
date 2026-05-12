@@ -7,19 +7,21 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*", // Дозволити всім (для локал тунелю це необхідно)
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// === СТАН ===
+app.get('/game', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'game.html'));
+});
+
 const rooms = {};
 const teams = {};
 const rounds = {};
 
-// Функція генерації літер
 function generateLetters(word, playerCount) {
     let letters = word.toUpperCase().split('');
     while (letters.length < playerCount) {
@@ -241,5 +243,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`🚀 Server on port ${PORT}`);
+    console.log(`Server on port ${PORT}`);
 });
