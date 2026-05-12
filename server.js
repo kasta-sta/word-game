@@ -249,7 +249,6 @@ app.get(`/${INDEXNOW_KEY}.txt`, (req, res) => {
   res.send(INDEXNOW_KEY);
 });
 
-
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`Server on port ${PORT}`);
