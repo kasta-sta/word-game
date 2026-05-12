@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
                 playerLetters: rounds[roomCode].playerLetters
             });
         }
-        console.log(`👁️ Адмін слідкує за ${roomCode}`);
+        console.log(`Адмін слідкує за ${roomCode}`);
     });
 
     // 3. Розподіл команд
@@ -72,7 +72,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        console.log(`🔄 Розподіл ${rooms[roomCode].length} гравців на ${teamCount} команд`);
+        console.log(`Розподіл ${rooms[roomCode].length} гравців на ${teamCount} команд`);
         
         const players = [...rooms[roomCode]];
         const newTeams = {};
@@ -102,7 +102,7 @@ io.on('connection', (socket) => {
         
         teams[roomCode] = newTeams;
         io.to(roomCode).emit('teams_distributed', { teams: newTeams });
-        console.log(`✅ Команди розподілено`);
+        console.log(`Команди розподілено`);
     });
 
     // 4. Старт раунду
@@ -118,7 +118,7 @@ io.on('connection', (socket) => {
         }
 
         const cleanWord = word.trim().toUpperCase();
-        console.log(`🎯 Раунд: "${cleanWord}"`);
+        console.log(`Раунд: "${cleanWord}"`);
 
         rounds[roomCode] = { word: cleanWord, active: true, playerLetters: {} };
 
@@ -154,7 +154,7 @@ io.on('connection', (socket) => {
         });
     });
 
-    // 🆕 5. ВАЛІДАЦІЯ КОДУ (нова функція)
+    // 5. ВАЛІДАЦІЯ КОДУ (нова функція)
     socket.on('submit_answer', ({ roomCode, team, code }) => {
         if (!rounds[roomCode] || !rounds[roomCode].active) {
             socket.emit('answer_result', { 
@@ -177,7 +177,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        console.log(`🧩 ${team} ввела код: "${code}"`);
+        console.log(`${team} ввела код: "${code}"`);
 
         // Розбиваємо код на цифри (напр. "321" -> [3, 2, 1])
         const numbers = code.split('').map(n => parseInt(n.trim()));
@@ -195,9 +195,9 @@ io.on('connection', (socket) => {
         const guessedWord = guessedLetters.join('');
         const isCorrect = guessedWord === targetWord;
 
-        console.log(`   🔍 ${numbers.join('-')} -> "${guessedWord}" (ціль: "${targetWord}") ${isCorrect ? '✅' : '❌'}`);
+        console.log(`   ${numbers.join('-')} -> "${guessedWord}" (ціль: "${targetWord}") ${isCorrect ? '✅' : '❌'}`);
 
-        // 🆕 Відправляємо результат ВСІМ у кімнаті
+        // Відправляємо результат ВСІМ у кімнаті
         io.to(roomCode).emit('answer_result', {
             success: isCorrect,
             message: isCorrect ? '🎉 ПРАВИЛЬНО!' : '❌ Невірне слово',
@@ -225,7 +225,7 @@ io.on('connection', (socket) => {
             rounds[roomCode].active = false;
         }
         io.to(roomCode).emit('round_reset');
-        console.log(`🔄 Раунд скинуто для ${roomCode}`);
+        console.log(`Раунд скинуто для ${roomCode}`);
     });
 
     // 7. Гравець вийшов
@@ -241,7 +241,7 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`Server on port ${PORT}`);
 });
