@@ -241,6 +241,15 @@ io.on('connection', (socket) => {
     });
 });
 
+// роут для IndexNow ключа
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY;
+
+app.get(`/${INDEXNOW_KEY}.txt`, (req, res) => {
+  res.type('text/plain');
+  res.send(INDEXNOW_KEY);
+});
+
+
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`Server on port ${PORT}`);
