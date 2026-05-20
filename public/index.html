@@ -132,12 +132,63 @@
 </footer>
 <!-- Google tag (gtag.js) -->
 <script>
-    window.addEventListener('load', function() {
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-QD90Y4MGSR', { send_page_view: true });
+
+  function sendGtagEvent(name, params) {
+    if (typeof gtag === 'function') {
+      gtag('event', name, Object.assign({ event_category: 'engagement' }, params));
+    }
+  }
+
+  function initGtagScript() {
     var script = document.createElement('script');
     script.src = 'https://www.googletagmanager.com/gtag/js?id=G-QD90Y4MGSR';
     script.async = true;
     document.head.appendChild(script);
-  });
+  }
+
+  function initActionTracking() {
+    var startButton = document.querySelector('.btn[href="/game"]');
+    if (startButton) {
+      startButton.addEventListener('click', function() {
+        sendGtagEvent('start_game', { event_label: 'Почати гру', value: 1 });
+      });
+    }
+
+    document.querySelectorAll('footer a[href]').forEach(function(link) {
+      link.addEventListener('click', function() {
+        sendGtagEvent('navigation_click', {
+          event_label: this.textContent.trim() || this.href,
+          destination: this.getAttribute('href')
+        });
+      });
+    });
+
+    var scrollSent = false;
+    window.addEventListener('scroll', function() {
+      if (scrollSent) return;
+      if (window.scrollY > 150) {
+        scrollSent = true;
+        sendGtagEvent('scroll', {
+          event_label: 'main_content_scroll',
+          value: Math.round(window.scrollY)
+        });
+      }
+    }, { passive: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      initGtagScript();
+      initActionTracking();
+    });
+  } else {
+    initGtagScript();
+    initActionTracking();
+  }
 </script>
 
 </body>
