@@ -14,20 +14,9 @@ const io = new Server(server, {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/game', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'game.html'));
-});
-
-app.get('/rules', (req, res) => {
-  res.sendFile(__dirname + '/public/rules.html');
-});
-
-app.get('/about', (req, res) => {
-  res.sendFile(__dirname + '/public/about.html');
-});
-
-app.get('/contact', (req, res) => {
-  res.sendFile(__dirname + '/public/contact.html');
+app.get(['/', '/game', '/rules', '/about', '/contact'], (req, res) => {
+  const path = req.path === '/' ? '/index' : req.path;
+  res.sendFile(__dirname + '/public' + path + '.html');
 });
 
 const rooms = {};
